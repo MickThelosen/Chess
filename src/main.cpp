@@ -1,15 +1,16 @@
 #include <iostream>
-#include "include\board.h"
+#include "../include/headers/board.h"
 
 using namespace sf;
+using namespace std;
 
 int main()
 {
-    RenderWindow window(VideoMode(512, 512), "SFML Chess");
-    Texture chessPiecesTexture;
-
+    cout << "test" << endl;
+    RenderWindow window(VideoMode(512, 512), "Mick's Chess");
 
     Board chessBoard;
+    chessBoard.setupBoard();
 
     while (window.isOpen())
     {
@@ -25,7 +26,7 @@ int main()
         window.clear();
 
         // Draw the chessboard and pieces
-        chessBoard.displayBoard(window, chessPiecesTexture);
+        chessBoard.displayBoard(window);
 
         window.display();
     }
