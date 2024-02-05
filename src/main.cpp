@@ -1,34 +1,41 @@
 #include <iostream>
-#include "../include/headers/board.h"
+#include <../headers/board.h>
 
-using namespace sf;
-using namespace std;
 
-int main()
+int main(int argc, char *args[])
 {
-    cout << "test" << endl;
-    RenderWindow window(VideoMode(512, 512), "Mick's Chess");
-
     Board chessBoard;
-    chessBoard.setupBoard();
-
-    while (window.isOpen())
+    chessBoard.createDebugConsole();
+    
+    if (!chessBoard.initSDL())
     {
-        Event event;
-        while (window.pollEvent(event))
+        cerr << "Failed to initialize SDL!" << endl;
+        return -1;
+    }
+
+    if (!chessBoard.loadMedia())
+    {
+        cerr << "Failed to load media!" << endl;
+        return -1;
+    }
+
+    bool quit = false;
+    chessBoard.setupBoard();
+    SDL_Event event;
+
+    while (!quit)
+    {
+        while (SDL_PollEvent(&event) != 0)
         {
-            if (event.type == Event::Closed)
+            if (event.type == SDL_QUIT)
             {
-                window.close();
+                quit = true;
             }
         }
 
-        window.clear();
-
-        // Draw the chessboard and pieces
-        chessBoard.displayBoard(window);
-
-        window.display();
+        chessBoard.drawChessboard();
     }
+
+    chessBoard.closeSDL();
     return 0;
 }
