@@ -4,7 +4,6 @@
 #include <iostream>
 #include <map>
 #include <cstring>
-#include <Windows.h>
 #include <../SDL2/SDL.h>
 #include <../SDL2/SDL_image.h>
 
@@ -12,9 +11,12 @@ using namespace std;
 
 struct Piece
 {
-    char type = 'O';
+    char type;
     int pos;
     bool isWhite;
+    bool hasMoved = false;
+    bool isSelected = false;
+    bool possible = false;
 };
 
 class Board
@@ -27,6 +29,7 @@ private:
     SDL_Window *gWindow = NULL;
     SDL_Renderer *gRenderer = NULL;
     std::map<std::string, SDL_Texture*> gPieceTextures;
+    int selectedX, selectedY;
 
 public:
     Board(){};
@@ -35,7 +38,8 @@ public:
     void closeSDL();
     void drawChessboard();
     bool loadMedia();
-    void createDebugConsole();
+    void calcMoves();
+    void setSelected(int X, int Y);
     SDL_Texture* loadTexture(const std::string& path);
 };
 
