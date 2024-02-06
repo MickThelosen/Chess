@@ -41,7 +41,7 @@ void Board::setupBoard()
 
     board[0][4] = {'K', 4, false};
     board[7][4] = {'K', 60, true};
-    board[4][3] = {'B', 35, true};
+    board[4][3] = {'R', 35, true};
 }
 
 bool Board::initSDL()
@@ -157,7 +157,7 @@ void Board::drawChessboard()
             }
             else if (board[i][j].possible && (i + j) % 2 != 0)
             {
-                SDL_SetRenderDrawColor(gRenderer, 200, 200, 200, 255);
+                SDL_SetRenderDrawColor(gRenderer, 150, 150, 150, 255);
             }
             if (board[i][j].isSelected && (i + j) % 2 == 0)
             {
@@ -165,7 +165,7 @@ void Board::drawChessboard()
             }
             else if (board[i][j].isSelected && (i + j) % 2 != 0)
             {
-                SDL_SetRenderDrawColor(gRenderer, 150, 150, 150, 255);
+                SDL_SetRenderDrawColor(gRenderer, 115, 115, 115, 255);
             }
             SDL_RenderFillRect(gRenderer, &squareRect);
         }
@@ -207,6 +207,10 @@ void Board::calcMoves()
                     {
                         if (board[index][j].type != 'E')
                         {
+                            if (board[index][j].isWhite != board[i][j].isWhite)
+                            {
+                                board[index][j].possible = true;
+                            }
                             break;
                         }
                         else
@@ -218,6 +222,10 @@ void Board::calcMoves()
                     {
                         if (board[index][j].type != 'E')
                         {
+                            if (board[index][j].isWhite != board[i][j].isWhite)
+                            {
+                                board[index][j].possible = true;
+                            }
                             break;
                         }
                         else
@@ -229,6 +237,10 @@ void Board::calcMoves()
                     {
                         if (board[i][index].type != 'E')
                         {
+                            if (board[i][index].isWhite != board[i][j].isWhite)
+                            {
+                                board[i][index].possible = true;
+                            }
                             break;
                         }
                         else
@@ -240,6 +252,10 @@ void Board::calcMoves()
                     {
                         if (board[i][index].type != 'E')
                         {
+                            if (board[i][index].isWhite != board[i][j].isWhite)
+                            {
+                                board[i][index].possible = true;
+                            }
                             break;
                         }
                         else
@@ -249,21 +265,70 @@ void Board::calcMoves()
                     }
                     break;
                 case 'B':
-                    for (int indexI = i - 1; indexI >= 0; indexI--)
+                    for (int indexI = i - 1, indexJ = j - 1; indexI >= 0 && indexI >= 0; indexI--, indexJ--)
                     {
-                        for (int indexJ = j - 1; indexJ >= 0; indexJ--)
+                        if (board[indexI][indexJ].type != 'E')
                         {
-                            if (board[indexI][indexJ].type != 'E')
-                            {
-                                break;
-                            }
-                            else
+                            if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
                             {
                                 board[indexI][indexJ].possible = true;
                             }
+                            break;
+                        }
+                        else
+                        {
+                            board[indexI][indexJ].possible = true;
+                        }
+                    }
+                    for (int indexI = i - 1, indexJ = j + 1; indexI >= 0 && indexI < 8; indexI--, indexJ++)
+                    {
+                        if (board[indexI][indexJ].type != 'E')
+                        {
+                            if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
+                            {
+                                board[indexI][indexJ].possible = true;
+                            }
+                            break;
+                        }
+                        else
+                        {
+                            board[indexI][indexJ].possible = true;
+                        }
+                    }
+                    for (int indexI = i + 1, indexJ = j + 1; indexI < 8 && indexI < 8; indexI++, indexJ++)
+                    {
+                        if (board[indexI][indexJ].type != 'E')
+                        {
+                            if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
+                            {
+                                board[indexI][indexJ].possible = true;
+                            }
+                            break;
+                        }
+                        else
+                        {
+                            board[indexI][indexJ].possible = true;
+                        }
+                    }
+                    for (int indexI = i + 1, indexJ = j - 1; indexI < 8 && indexI >= 0; indexI++, indexJ--)
+                    {
+                        if (board[indexI][indexJ].type != 'E')
+                        {
+                            if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
+                            {
+                                board[indexI][indexJ].possible = true;
+                            }
+                            break;
+                        }
+                        else
+                        {
+                            board[indexI][indexJ].possible = true;
                         }
                     }
                     break;
+                case 'N':
+                break;
+
                 default:
                     cout << "No piece" << endl;
                     break;
