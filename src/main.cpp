@@ -35,15 +35,15 @@ int main(int argc, char *args[])
             if (event.type == SDL_MOUSEBUTTONDOWN) {
                 SDL_GetMouseState(&x, &y);
                 chessBoard.setSelected(x, y);
-                cout << "X: " << x << " Y: " << y << endl;
+                if (chessBoard.gameState() == 4 || chessBoard.gameState() == 5) {
+                    chessBoard.setupBoard();
+                }
                 chessBoard.calcMoves();
             }
         }
-
         chessBoard.drawChessboard();
     }
 quit:
-    cout << "quit" << endl;
     chessBoard.closeSDL();
     return 0;
 }
