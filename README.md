@@ -8,6 +8,8 @@ You can run it by executing the Chess.exe in /bin or compile it yourself by usin
 ```terminal
   cd bin
   mingw32-make
+  .\Chess.exe
 ```
+
 
 ![alt text](https://github.com/MickThelosen/Chess/blob/main/assets/Chess.png?raw=true)
