@@ -17,6 +17,8 @@ struct Piece
     bool hasMoved = false;
     bool isSelected = false;
     bool possible = false;
+    bool castlePath = false;
+    bool castleSquare = false;
 };
 
 class Board
@@ -37,10 +39,12 @@ private:
     int bScore = 0;
     bool whiteTurn = true;
     bool pieceSelected = false;
+    bool castleSelected = false;
     int gameStatus = 0; // 0 = stopped 1 = playing 2 = white check 3 = black check 4 = white win 5 = black win
     char score[100];
     char gameInfo[100];
     char gameCheck[100];
+    int selectedPiece[2] = {0 , 0};
 public:
     Board(){};
     void setupBoard();
@@ -52,6 +56,10 @@ public:
     void setSelected(int x, int y);
     bool onBoard(int x, int y);
     int gameState();
+    void printHasMoved();
+    void printType();
+    void printSelected();
+    void printCastlePath();
     SDL_Texture* loadTexture(const std::string& path);
 };
 

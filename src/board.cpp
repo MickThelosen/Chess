@@ -5,6 +5,7 @@ using namespace std;
 void Board::setupBoard()
 {
     gameStatus = 1;
+    whiteTurn = true;
     sprintf(score, "Current score W-B: %2d - %2d", wScore, bScore);
     sprintf(gameInfo, "It's %s turn.", whiteTurn ? "White's" : "Black's");
     sprintf(gameCheck, " ");
@@ -43,6 +44,9 @@ void Board::setupBoard()
 
     board[0][4] = {'K', false};
     board[7][4] = {'K', true};
+
+    board[7][2] = {'E', true};
+    board[7][3] = {'E', true};
 }
 
 bool Board::initSDL()
@@ -175,6 +179,14 @@ void Board::drawChessboard()
             {
                 SDL_SetRenderDrawColor(gRenderer, 115, 115, 115, 255);
             }
+            if (board[i][j].castleSquare && (i + j) % 2 == 0 && board[selectedPiece[0]][selectedPiece[1]].type == 'K')
+            {
+                SDL_SetRenderDrawColor(gRenderer, 75, 150, 75, 255);
+            }
+            else if (board[i][j].castleSquare && (i + j) % 2 != 0 && board[selectedPiece[0]][selectedPiece[1]].type == 'K')
+            {
+                SDL_SetRenderDrawColor(gRenderer, 115, 150, 115, 255);
+            }
             SDL_RenderFillRect(gRenderer, &squareRect);
         }
     }
@@ -193,29 +205,28 @@ void Board::drawChessboard()
             }
         }
     }
-    SDL_Color textColor = {255, 255, 255, 255}; // White color for text
+    SDL_Color textColor = {255, 255, 255, 255};
     SDL_Surface *debugTextSurface = TTF_RenderText_Solid(font, score, textColor);
     SDL_Texture *debugTextTexture = SDL_CreateTextureFromSurface(gRenderer, debugTextSurface);
-    SDL_Rect debugTextRect = {SCREEN_WIDTH - debugTextSurface->w - 23, (SCREEN_HEIGHT / 2) - 10, debugTextSurface->w, debugTextSurface->h}; // Adjust position for right side
+    SDL_Rect debugTextRect = {SCREEN_WIDTH - debugTextSurface->w - 23, (SCREEN_HEIGHT / 2) - 10, debugTextSurface->w, debugTextSurface->h};
     SDL_RenderCopy(gRenderer, debugTextTexture, NULL, &debugTextRect);
     SDL_FreeSurface(debugTextSurface);
     SDL_DestroyTexture(debugTextTexture);
 
     SDL_Surface *additionalInfoSurface = TTF_RenderText_Solid(font, gameInfo, textColor);
     SDL_Texture *additionalInfoTexture = SDL_CreateTextureFromSurface(gRenderer, additionalInfoSurface);
-    SDL_Rect additionalInfoRect = {SCREEN_WIDTH - additionalInfoSurface->w - 50, (SCREEN_HEIGHT / 2) + 5 , additionalInfoSurface->w, additionalInfoSurface->h}; // Adjust position for right side
+    SDL_Rect additionalInfoRect = {SCREEN_WIDTH - additionalInfoSurface->w - 50, (SCREEN_HEIGHT / 2) + 5, additionalInfoSurface->w, additionalInfoSurface->h};
     SDL_RenderCopy(gRenderer, additionalInfoTexture, NULL, &additionalInfoRect);
     SDL_FreeSurface(additionalInfoSurface);
     SDL_DestroyTexture(additionalInfoTexture);
 
     SDL_Surface *gameCheckSurface = TTF_RenderText_Solid(font, gameCheck, textColor);
     SDL_Texture *gameCheckTexture = SDL_CreateTextureFromSurface(gRenderer, gameCheckSurface);
-    SDL_Rect gameCheckRect = {SCREEN_WIDTH - gameCheckSurface->w - 50, (SCREEN_HEIGHT / 2) + 20 , gameCheckSurface->w, gameCheckSurface->h}; // Adjust position for right side
+    SDL_Rect gameCheckRect = {SCREEN_WIDTH - gameCheckSurface->w - 50, (SCREEN_HEIGHT / 2) + 20, gameCheckSurface->w, gameCheckSurface->h};
     SDL_RenderCopy(gRenderer, gameCheckTexture, NULL, &gameCheckRect);
     SDL_FreeSurface(gameCheckSurface);
     SDL_DestroyTexture(gameCheckTexture);
 
-    // Present rendered content
     SDL_RenderPresent(gRenderer);
 }
 
@@ -236,7 +247,7 @@ void Board::calcMoves()
                         {
                             board[i - 1][j].possible = true;
                         }
-                        if (board[i - 2][j].type == 'E' && !board[i][j].hasMoved)
+                        if (board[i - 1][j].type == 'E' && board[i - 2][j].type == 'E' && !board[i][j].hasMoved)
                         {
                             board[i - 2][j].possible = true;
                         }
@@ -255,7 +266,7 @@ void Board::calcMoves()
                         {
                             board[i + 1][j].possible = true;
                         }
-                        if (board[i + 2][j].type == 'E' && !board[i][j].hasMoved)
+                        if (board[i + 1][j].type == 'E' && board[i + 2][j].type == 'E' && !board[i][j].hasMoved)
                         {
                             board[i + 2][j].possible = true;
                         }
@@ -592,6 +603,40 @@ void Board::calcMoves()
                             }
                         }
                     }
+                    if (!board[i][j].hasMoved)
+                    {
+                        for (int index = j - 1; index >= 0; index--)
+                        {
+                            if (board[i][index].type == 'E')
+                            {
+                                board[i][index].castlePath = true;
+                            }
+                            else
+                            {
+                                if (board[i][index].type == 'R' && !board[i][index].hasMoved)
+                                {
+                                    board[i][index].castleSquare = true;
+                                }
+                                break;
+                            }
+                        }
+                        for (int index = j + 1; index < 8; index++)
+                        {
+                            if (board[i][index].type == 'E')
+                            {
+                                board[i][index].castlePath = true;
+                            }
+                            else
+                            {
+                                if (board[i][index].type == 'R' && !board[i][index].hasMoved)
+                                {
+                                    board[i][index].castleSquare = true;
+                                }
+                                break;
+                            }
+                        }
+                    }
+
                     break;
                 case 'E':
                     break;
@@ -608,7 +653,7 @@ void Board::setSelected(int X, int Y)
 {
     selectedX = X / SQUARE_SIZE_WIDTH;
     selectedY = Y / SQUARE_SIZE_HEIGHT;
-    if (board[selectedY][selectedX].type != 'E' && whiteTurn && board[selectedY][selectedX].isWhite || board[selectedY][selectedX].type != 'E' && !whiteTurn && !board[selectedY][selectedX].isWhite)
+    if (board[selectedY][selectedX].type != 'E' && whiteTurn == board[selectedY][selectedX].isWhite && !pieceSelected)
     {
         for (int i = 0; i < 8; i++)
         {
@@ -619,10 +664,12 @@ void Board::setSelected(int X, int Y)
             }
         }
         board[selectedY][selectedX].isSelected = true;
+        selectedPiece[0] = selectedY;
+        selectedPiece[1] = selectedX;
         pieceSelected = true;
-        
+        sprintf(gameCheck, "Selected piece at %d,%d", selectedY, selectedX);
     }
-    if (board[selectedY][selectedX].type == 'E' && pieceSelected && board[selectedY][selectedX].possible || !board[selectedY][selectedX].isWhite && whiteTurn && pieceSelected && board[selectedY][selectedX].possible || board[selectedY][selectedX].isWhite && !whiteTurn && pieceSelected && board[selectedY][selectedX].possible)
+    else if (board[selectedY][selectedX].type == 'E' && pieceSelected && board[selectedY][selectedX].possible || board[selectedY][selectedX].isWhite != whiteTurn && pieceSelected && board[selectedY][selectedX].possible || board[selectedY][selectedX].isWhite == whiteTurn && pieceSelected && board[selectedY][selectedX].type == 'R' && !board[selectedY][selectedX].hasMoved || board[selectedY][selectedX].isWhite == whiteTurn && pieceSelected && board[selectedY][selectedX].type != 'K' && board[selectedY][selectedX].type != 'E')
     {
         for (int i = 0; i < 8; i++)
         {
@@ -630,15 +677,149 @@ void Board::setSelected(int X, int Y)
             {
                 if (board[i][j].isSelected)
                 {
-                    board[selectedY][selectedX].type = board[i][j].type;
-                    board[selectedY][selectedX].isWhite = board[i][j].isWhite;
-                    board[selectedY][selectedX].hasMoved = true;
-                    board[i][j].type = 'E';
-                    board[i][j].isWhite = true;
-                    pieceSelected = false;
+                    if (board[selectedY][selectedX].isWhite != board[i][j].isWhite || board[selectedY][selectedX].type == 'E')
+                    {
+                        board[selectedY][selectedX].type = board[i][j].type;
+                        board[selectedY][selectedX].isWhite = board[i][j].isWhite;
+                        board[selectedY][selectedX].hasMoved = true;
+                        board[i][j].type = 'E';
+                        board[i][j].isWhite = true;
+                        board[i][j].hasMoved = false;
+                        pieceSelected = false;
+                        sprintf(gameCheck, "Moved piece %d,%d to %d,%d", selectedY, selectedX, i, j);
+                        whiteTurn = !whiteTurn;
+                        sprintf(gameInfo, "It's %s turn.", whiteTurn ? "White's" : "Black's");
+                    }
+                    else if (board[selectedY][selectedX].type == 'R' && board[selectedY][selectedX].isWhite == board[i][j].isWhite && board[i][j].type == 'K')
+                    {
+                        sprintf(gameCheck, "Trying to castle ");
+                        if (selectedY == 0 && selectedX == 0 && board[selectedY][selectedX + 1].castlePath && board[selectedY][selectedX + 2].castlePath && board[selectedY][selectedX + 3].castlePath && !board[i][j].hasMoved && !board[selectedY][selectedX].hasMoved)
+                        {
+                            sprintf(gameCheck, "Castling %d,%d with %d,%d", i, j, selectedY, selectedX);
+                            board[selectedY][selectedX + 2].type = board[i][j].type;
+                            board[selectedY][selectedX + 2].isWhite = board[i][j].isWhite;
+                            board[selectedY][selectedX + 2].hasMoved = true;
+                            board[selectedY][selectedX + 3].type = board[selectedY][selectedX].type;
+                            board[selectedY][selectedX + 3].isWhite = board[selectedY][selectedX].isWhite;
+                            board[selectedY][selectedX + 3].hasMoved = true;
+                            board[i][j].type = 'E';
+                            board[i][j].isWhite = true;
+                            board[i][j].castleSquare = false;
+                            board[selectedY][selectedX].type = 'E';
+                            board[selectedY][selectedX].isWhite = true;
+                            board[selectedY][selectedX].castleSquare = false;
+                            pieceSelected = false;
+                            whiteTurn = !whiteTurn;
+                            sprintf(gameInfo, "It's %s turn.", whiteTurn ? "White's" : "Black's");
+                        }
+
+                        else if (selectedY == 0 && selectedX == 7 && board[selectedY][selectedX - 1].castlePath && board[selectedY][selectedX - 2].castlePath && !board[i][j].hasMoved && !board[selectedY][selectedX].hasMoved)
+                        {
+                            sprintf(gameCheck, "Castling %d,%d with %d,%d", i, j, selectedY, selectedX);
+                            board[selectedY][selectedX - 1].type = board[i][j].type;
+                            board[selectedY][selectedX - 1].isWhite = board[i][j].isWhite;
+                            board[selectedY][selectedX - 1].hasMoved = true;
+                            board[selectedY][selectedX - 2].type = board[selectedY][selectedX].type;
+                            board[selectedY][selectedX - 2].isWhite = board[selectedY][selectedX].isWhite;
+                            board[selectedY][selectedX - 2].hasMoved = true;
+                            board[i][j].type = 'E';
+                            board[i][j].isWhite = true;
+                            board[i][j].castleSquare = false;
+                            board[selectedY][selectedX].type = 'E';
+                            board[selectedY][selectedX].isWhite = true;
+                            board[selectedY][selectedX].castleSquare = false;
+                            pieceSelected = false;
+                            whiteTurn = !whiteTurn;
+                            sprintf(gameInfo, "It's %s turn.", whiteTurn ? "White's" : "Black's");
+                        }
+
+                        else if (selectedY == 7 && selectedX == 0 && board[selectedY][selectedX + 1].castlePath && board[selectedY][selectedX + 2].castlePath && board[selectedY][selectedX + 3].castlePath && !board[i][j].hasMoved && !board[selectedY][selectedX].hasMoved)
+                        {
+                            sprintf(gameCheck, "Castling %d,%d with %d,%d", i, j, selectedY, selectedX);
+                            board[selectedY][selectedX + 2].type = board[i][j].type;
+                            board[selectedY][selectedX + 2].isWhite = board[i][j].isWhite;
+                            board[selectedY][selectedX + 2].hasMoved = true;
+                            board[selectedY][selectedX + 3].type = board[selectedY][selectedX].type;
+                            board[selectedY][selectedX + 3].isWhite = board[selectedY][selectedX].isWhite;
+                            board[selectedY][selectedX + 3].hasMoved = true;
+                            board[i][j].type = 'E';
+                            board[i][j].isWhite = true;
+                            board[i][j].castleSquare = false;
+                            board[selectedY][selectedX].type = 'E';
+                            board[selectedY][selectedX].isWhite = true;
+                            board[selectedY][selectedX].castleSquare = false;
+                            pieceSelected = false;
+                            whiteTurn = !whiteTurn;
+                            sprintf(gameInfo, "It's %s turn.", whiteTurn ? "White's" : "Black's");
+                        }
+
+                        else if (selectedY == 7 && selectedX == 7 && board[selectedY][selectedX - 1].castlePath && board[selectedY][selectedX - 2].castlePath && !board[i][j].hasMoved && !board[selectedY][selectedX].hasMoved)
+                        {
+                            sprintf(gameCheck, "Castling %d,%d with %d,%d", i, j, selectedY, selectedX);
+                            board[selectedY][selectedX - 1].type = board[i][j].type;
+                            board[selectedY][selectedX - 1].isWhite = board[i][j].isWhite;
+                            board[selectedY][selectedX - 1].hasMoved = true;
+                            board[selectedY][selectedX - 2].type = board[selectedY][selectedX].type;
+                            board[selectedY][selectedX - 2].isWhite = board[selectedY][selectedX].isWhite;
+                            board[selectedY][selectedX - 2].hasMoved = true;
+                            board[i][j].type = 'E';
+                            board[i][j].isWhite = true;
+                            board[i][j].castleSquare = false;
+                            board[selectedY][selectedX].type = 'E';
+                            board[selectedY][selectedX].isWhite = true;
+                            board[selectedY][selectedX].castleSquare = false;
+                            pieceSelected = false;
+                            whiteTurn = !whiteTurn;
+                            sprintf(gameInfo, "It's %s turn.", whiteTurn ? "White's" : "Black's");
+                        }
+                        else
+                        {
+                            for (int i = 0; i < 8; i++)
+                            {
+                                for (int j = 0; j < 8; j++)
+                                {
+                                    board[i][j].isSelected = false;
+                                    board[i][j].possible = false;
+                                    board[i][j].castlePath = false;
+                                    board[i][j].castleSquare = false;
+                                }
+                            }
+                            board[selectedY][selectedX].isSelected = true;
+                            selectedPiece[0] = selectedY;
+                            selectedPiece[1] = selectedX;
+                            pieceSelected = true;
+                            sprintf(gameCheck, "Selected piece at %d,%d", selectedY, selectedX);
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < 8; i++)
+                        {
+                            for (int j = 0; j < 8; j++)
+                            {
+                                board[i][j].isSelected = false;
+                                board[i][j].possible = false;
+                            }
+                        }
+                        board[selectedY][selectedX].isSelected = true;
+                        selectedPiece[0] = selectedY;
+                        selectedPiece[1] = selectedX;
+                        pieceSelected = true;
+                    }
+                    for (int i = 0; i < 8; i++)
+                    {
+                        for (int j = 0; j < 8; j++)
+                        {
+                            board[i][j].castlePath = false;
+                            board[i][j].castleSquare = false;
+                        }
+                    }
                 }
             }
         }
+    }
+    else if (board[selectedY][selectedX].type == 'K' && whiteTurn == board[selectedY][selectedX].isWhite && pieceSelected)
+    {
         for (int i = 0; i < 8; i++)
         {
             for (int j = 0; j < 8; j++)
@@ -647,9 +828,10 @@ void Board::setSelected(int X, int Y)
                 board[i][j].possible = false;
             }
         }
-        sprintf(gameCheck, " ");
-        whiteTurn = !whiteTurn;
-        sprintf(gameInfo, "It's %s turn.", whiteTurn ? "White's" : "Black's");
+        board[selectedY][selectedX].isSelected = true;
+        selectedPiece[0] = selectedY;
+        selectedPiece[1] = selectedX;
+        sprintf(gameCheck, "Selected piece at %d,%d", selectedY, selectedX);
     }
 }
 
@@ -691,6 +873,7 @@ int Board::gameState()
                         }
                         board[a][b].isSelected = false;
                         board[a][b].possible = false;
+                        board[a][b].castlePath = false;
                     }
                 }
             }
@@ -715,6 +898,7 @@ int Board::gameState()
                         }
                         board[a][b].isSelected = false;
                         board[a][b].possible = false;
+                        board[a][b].castlePath = false;
                     }
                 }
             }
@@ -751,4 +935,57 @@ int Board::gameState()
         }
     }
     return status;
+}
+
+void Board::printHasMoved()
+{
+    cout << " " << endl;
+    cout << "Has moved: " << endl;
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            cout << board[i][j].hasMoved << " ";
+        }
+        cout << endl;
+    }
+}
+void Board::printType()
+{
+    cout << " " << endl;
+    cout << "Types: " << endl;
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            cout << board[i][j].type << " ";
+        }
+        cout << endl;
+    }
+}
+void Board::printSelected()
+{
+    cout << " " << endl;
+    cout << "Selected: " << castleSelected << endl;
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            cout << board[i][j].isSelected << " ";
+        }
+        cout << endl;
+    }
+}
+void Board::printCastlePath()
+{
+    cout << " " << endl;
+    cout << "CastlePath: " << endl;
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            cout << board[i][j].castlePath << " ";
+        }
+        cout << endl;
+    }
 }

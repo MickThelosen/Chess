@@ -6,6 +6,7 @@
     Castling
     Restrict move if mate
     Visualize captured pieces
+    SVG files for pieces
 */
 int main(int argc, char *args[])
 {
@@ -54,7 +55,21 @@ int main(int argc, char *args[])
                 case SDLK_ESCAPE:
                     goto quit;
                     break;
-
+                case SDLK_m:
+                    chessBoard.printHasMoved();
+                    break;
+                case SDLK_t:
+                    chessBoard.printType();
+                    break;
+                case SDLK_s:
+                    chessBoard.printSelected();
+                    break;
+                case SDLK_p:
+                    chessBoard.printCastlePath();
+                    break;
+                case SDLK_r:
+                    chessBoard.setupBoard();
+                    break;
                 default:
                     break;
                 }
