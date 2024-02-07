@@ -10,3 +10,4 @@ You can run it by executing the Chess.exe in /bin or compile it yourself by usin
   mingw32-make
 ```
 
+![alt text](https://github.com/MickThelosen/Chess/blob/main/assets/Chess.png?raw=true)
