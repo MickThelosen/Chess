@@ -5,6 +5,9 @@ using namespace std;
 void Board::setupBoard()
 {
     gameStatus = 1;
+    sprintf(score, "Current score W-B: %2d - %2d", wScore, bScore);
+    sprintf(gameInfo, "It's %s turn.", whiteTurn ? "White's" : "Black's");
+    sprintf(gameCheck, " ");
     for (int i = 0; i < 8;)
     {
         board[1][i] = {'P', false};
@@ -46,6 +49,11 @@ bool Board::initSDL()
 {
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
+        return false;
+    }
+    if (TTF_Init() == -1)
+    {
+        cerr << "SDL_ttf could not initialize! SDL_ttf Error: " << TTF_GetError() << endl;
         return false;
     }
 
@@ -134,14 +142,15 @@ void Board::closeSDL()
 
 void Board::drawChessboard()
 {
-    SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, 255);
+    TTF_Font *font = TTF_OpenFont("../assets/27733932592.ttf", 12);
+    SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 255); // Black color
     SDL_RenderClear(gRenderer);
 
     for (int i = 0; i < 8; i++)
     {
         for (int j = 0; j < 8; j++)
         {
-            SDL_Rect squareRect = {j * SQUARE_SIZE, i * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE};
+            SDL_Rect squareRect = {j * SQUARE_SIZE_WIDTH, i * SQUARE_SIZE_HEIGHT, SQUARE_SIZE_WIDTH, SQUARE_SIZE_HEIGHT};
             if ((i + j) % 2 == 0)
             {
                 SDL_SetRenderDrawColor(gRenderer, 139, 69, 19, 255);
@@ -179,11 +188,34 @@ void Board::drawChessboard()
                 string texture = "";
                 board[i][j].isWhite ? texture += "W" : texture += "B";
                 texture += board[i][j].type;
-                SDL_Rect pieceRect = {j * SQUARE_SIZE, i * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE};
+                SDL_Rect pieceRect = {j * SQUARE_SIZE_WIDTH, i * SQUARE_SIZE_HEIGHT, SQUARE_SIZE_WIDTH, SQUARE_SIZE_HEIGHT};
                 SDL_RenderCopy(gRenderer, gPieceTextures[texture], NULL, &pieceRect);
             }
         }
     }
+    SDL_Color textColor = {255, 255, 255, 255}; // White color for text
+    SDL_Surface *debugTextSurface = TTF_RenderText_Solid(font, score, textColor);
+    SDL_Texture *debugTextTexture = SDL_CreateTextureFromSurface(gRenderer, debugTextSurface);
+    SDL_Rect debugTextRect = {SCREEN_WIDTH - debugTextSurface->w - 23, (SCREEN_HEIGHT / 2) - 10, debugTextSurface->w, debugTextSurface->h}; // Adjust position for right side
+    SDL_RenderCopy(gRenderer, debugTextTexture, NULL, &debugTextRect);
+    SDL_FreeSurface(debugTextSurface);
+    SDL_DestroyTexture(debugTextTexture);
+
+    SDL_Surface *additionalInfoSurface = TTF_RenderText_Solid(font, gameInfo, textColor);
+    SDL_Texture *additionalInfoTexture = SDL_CreateTextureFromSurface(gRenderer, additionalInfoSurface);
+    SDL_Rect additionalInfoRect = {SCREEN_WIDTH - additionalInfoSurface->w - 50, (SCREEN_HEIGHT / 2) + 5 , additionalInfoSurface->w, additionalInfoSurface->h}; // Adjust position for right side
+    SDL_RenderCopy(gRenderer, additionalInfoTexture, NULL, &additionalInfoRect);
+    SDL_FreeSurface(additionalInfoSurface);
+    SDL_DestroyTexture(additionalInfoTexture);
+
+    SDL_Surface *gameCheckSurface = TTF_RenderText_Solid(font, gameCheck, textColor);
+    SDL_Texture *gameCheckTexture = SDL_CreateTextureFromSurface(gRenderer, gameCheckSurface);
+    SDL_Rect gameCheckRect = {SCREEN_WIDTH - gameCheckSurface->w - 50, (SCREEN_HEIGHT / 2) + 20 , gameCheckSurface->w, gameCheckSurface->h}; // Adjust position for right side
+    SDL_RenderCopy(gRenderer, gameCheckTexture, NULL, &gameCheckRect);
+    SDL_FreeSurface(gameCheckSurface);
+    SDL_DestroyTexture(gameCheckTexture);
+
+    // Present rendered content
     SDL_RenderPresent(gRenderer);
 }
 
@@ -574,10 +606,8 @@ void Board::calcMoves()
 
 void Board::setSelected(int X, int Y)
 {
-    int squareSize = SCREEN_WIDTH / 8;
-    selectedX = X / squareSize;
-    selectedY = Y / squareSize;
-
+    selectedX = X / SQUARE_SIZE_WIDTH;
+    selectedY = Y / SQUARE_SIZE_HEIGHT;
     if (board[selectedY][selectedX].type != 'E' && whiteTurn && board[selectedY][selectedX].isWhite || board[selectedY][selectedX].type != 'E' && !whiteTurn && !board[selectedY][selectedX].isWhite)
     {
         for (int i = 0; i < 8; i++)
@@ -590,6 +620,7 @@ void Board::setSelected(int X, int Y)
         }
         board[selectedY][selectedX].isSelected = true;
         pieceSelected = true;
+        
     }
     if (board[selectedY][selectedX].type == 'E' && pieceSelected && board[selectedY][selectedX].possible || !board[selectedY][selectedX].isWhite && whiteTurn && pieceSelected && board[selectedY][selectedX].possible || board[selectedY][selectedX].isWhite && !whiteTurn && pieceSelected && board[selectedY][selectedX].possible)
     {
@@ -616,9 +647,10 @@ void Board::setSelected(int X, int Y)
                 board[i][j].possible = false;
             }
         }
+        sprintf(gameCheck, " ");
         whiteTurn = !whiteTurn;
+        sprintf(gameInfo, "It's %s turn.", whiteTurn ? "White's" : "Black's");
     }
-    cout << "Selected type: " << board[selectedY][selectedX].type << " at y: " << selectedY << " x: " << selectedX << endl;
 }
 
 bool Board::onBoard(int x, int y)
@@ -637,84 +669,86 @@ int Board::gameState()
 {
     int status = 1;
     bool bKingAlive, wKingAlive = false;
-    if (!pieceSelected) {
-    for (int i = 0; i < 8; i++)
+    if (!pieceSelected)
     {
-        for (int j = 0; j < 8; j++)
+        for (int i = 0; i < 8; i++)
         {
-            if (board[i][j].isWhite)
+            for (int j = 0; j < 8; j++)
             {
-                board[i][j].isSelected = true;
-                calcMoves();
-            }
-            for (int a = 0; a < 8; a++)
-            {
-                for (int b = 0; b < 8; b++)
+                if (board[i][j].isWhite)
                 {
-                    if (board[a][b].type == 'K' && board[a][b].possible && !board[a][b].isWhite)
-                    {
-                        cout << "White checked black" << endl;
-                        status = 2;
-                    }
-                    board[a][b].isSelected = false;
-                    board[a][b].possible = false;
+                    board[i][j].isSelected = true;
+                    calcMoves();
                 }
-            }
-                }
-    }
-    for (int i = 0; i < 8; i++)
-    {
-        for (int j = 0; j < 8; j++)
-        {
-            if (!board[i][j].isWhite)
-            {
-                board[i][j].isSelected = true;
-                calcMoves();
-            }
-            for (int a = 0; a < 8; a++)
-            {
-                for (int b = 0; b < 8; b++)
+                for (int a = 0; a < 8; a++)
                 {
-                    if (board[a][b].type == 'K' && board[a][b].possible && board[a][b].isWhite)
+                    for (int b = 0; b < 8; b++)
                     {
-                        cout << "Black checked white" << endl;
-                        status = 3;
+                        if (board[a][b].type == 'K' && board[a][b].possible && !board[a][b].isWhite)
+                        {
+                            sprintf(gameCheck, "White checks Black!");
+                            status = 2;
+                        }
+                        board[a][b].isSelected = false;
+                        board[a][b].possible = false;
                     }
-                    board[a][b].isSelected = false;
-                    board[a][b].possible = false;
                 }
             }
         }
-    }
-    for (int i = 0; i < 8; i++)
-    {
-        for (int j = 0; j < 8; j++)
+        for (int i = 0; i < 8; i++)
         {
-            if (board[i][j].type == 'K' && board[i][j].isWhite)
+            for (int j = 0; j < 8; j++)
             {
-                wKingAlive = true;
-            }
-            else if (board[i][j].type == 'K' && !board[i][j].isWhite)
-            {
-                bKingAlive = true;
+                if (!board[i][j].isWhite)
+                {
+                    board[i][j].isSelected = true;
+                    calcMoves();
+                }
+                for (int a = 0; a < 8; a++)
+                {
+                    for (int b = 0; b < 8; b++)
+                    {
+                        if (board[a][b].type == 'K' && board[a][b].possible && board[a][b].isWhite)
+                        {
+                            sprintf(gameCheck, "Black checks White!");
+                            status = 3;
+                        }
+                        board[a][b].isSelected = false;
+                        board[a][b].possible = false;
+                    }
+                }
             }
         }
-    }
-    if (wKingAlive && bKingAlive)
-    {
-        status = 1;
-    }
-    else if (wKingAlive && !bKingAlive)
-    {
-        status = 4;
-        cout << "White won" << endl;
-    }
-    else if (!wKingAlive && bKingAlive)
-    {
-        status = 5;
-        cout << "Black won" << endl;
-    }
+        for (int i = 0; i < 8; i++)
+        {
+            for (int j = 0; j < 8; j++)
+            {
+                if (board[i][j].type == 'K' && board[i][j].isWhite)
+                {
+                    wKingAlive = true;
+                }
+                else if (board[i][j].type == 'K' && !board[i][j].isWhite)
+                {
+                    bKingAlive = true;
+                }
+            }
+        }
+        if (wKingAlive && bKingAlive)
+        {
+            status = 1;
+        }
+        else if (wKingAlive && !bKingAlive)
+        {
+            status = 4;
+            wScore++;
+            sprintf(score, "Current score W-B: %2d - %2d", wScore, bScore);
+        }
+        else if (!wKingAlive && bKingAlive)
+        {
+            status = 5;
+            bScore++;
+            sprintf(score, "Current score W-B: %2d - %2d", wScore, bScore);
+        }
     }
     return status;
-
 }

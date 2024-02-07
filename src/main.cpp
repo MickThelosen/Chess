@@ -1,11 +1,16 @@
 #include <iostream>
 #include <../headers/board.h>
-
-
+/*
+    TODO
+    En passent
+    Castling
+    Restrict move if mate
+    Visualize captured pieces
+*/
 int main(int argc, char *args[])
 {
     Board chessBoard;
-    
+
     if (!chessBoard.initSDL())
     {
         cout << "Failed to initialize SDL!" << endl;
@@ -22,7 +27,7 @@ int main(int argc, char *args[])
     chessBoard.setupBoard();
     SDL_Event event;
     int x, y;
-    
+
     while (!quit)
     {
         while (SDL_PollEvent(&event))
@@ -32,13 +37,27 @@ int main(int argc, char *args[])
                 quit = true;
                 goto quit;
             }
-            if (event.type == SDL_MOUSEBUTTONDOWN) {
+            if (event.type == SDL_MOUSEBUTTONDOWN)
+            {
                 SDL_GetMouseState(&x, &y);
                 chessBoard.setSelected(x, y);
-                if (chessBoard.gameState() == 4 || chessBoard.gameState() == 5) {
+                if (chessBoard.gameState() == 4 || chessBoard.gameState() == 5)
+                {
                     chessBoard.setupBoard();
                 }
                 chessBoard.calcMoves();
+            }
+            if (event.type == SDL_KEYDOWN)
+            {
+                switch (event.key.keysym.sym)
+                {
+                case SDLK_ESCAPE:
+                    goto quit;
+                    break;
+
+                default:
+                    break;
+                }
             }
         }
         chessBoard.drawChessboard();
