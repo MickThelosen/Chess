@@ -19,6 +19,7 @@ struct Piece
     bool possible = false;
     bool castlePath = false;
     bool castleSquare = false;
+    bool checksKing = false;
 };
 
 class Board
@@ -52,7 +53,7 @@ public:
     void closeSDL();
     void drawChessboard();
     bool loadMedia();
-    void calcMoves();
+    void calcMoves(int i, int j);
     void setSelected(int x, int y);
     bool onBoard(int x, int y);
     int gameState();

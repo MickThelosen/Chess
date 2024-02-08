@@ -45,8 +45,6 @@ void Board::setupBoard()
     board[0][4] = {'K', false};
     board[7][4] = {'K', true};
 
-    board[7][2] = {'E', true};
-    board[7][3] = {'E', true};
 }
 
 bool Board::initSDL()
@@ -179,13 +177,13 @@ void Board::drawChessboard()
             {
                 SDL_SetRenderDrawColor(gRenderer, 115, 115, 115, 255);
             }
-            if (board[i][j].castleSquare && (i + j) % 2 == 0 && board[selectedPiece[0]][selectedPiece[1]].type == 'K')
-            {
-                SDL_SetRenderDrawColor(gRenderer, 75, 150, 75, 255);
-            }
-            else if (board[i][j].castleSquare && (i + j) % 2 != 0 && board[selectedPiece[0]][selectedPiece[1]].type == 'K')
+            if (board[i][j].castleSquare && board[selectedPiece[0]][selectedPiece[1]].type == 'K')
             {
                 SDL_SetRenderDrawColor(gRenderer, 115, 150, 115, 255);
+            }
+            if (board[i][j].checksKing)
+            {
+                SDL_SetRenderDrawColor(gRenderer, 175, 115, 115, 255);
             }
             SDL_RenderFillRect(gRenderer, &squareRect);
         }
@@ -230,423 +228,418 @@ void Board::drawChessboard()
     SDL_RenderPresent(gRenderer);
 }
 
-void Board::calcMoves()
+void Board::calcMoves(int i, int j)
 {
-    for (int i = 0; i < 8; i++)
-    {
-        for (int j = 0; j < 8; j++)
-        {
-            if (board[i][j].isSelected == true)
-            {
-                switch (board[i][j].type)
-                {
-                case 'P':
-                    if (board[i][j].isWhite)
-                    {
-                        if (board[i - 1][j].type == 'E')
-                        {
-                            board[i - 1][j].possible = true;
-                        }
-                        if (board[i - 1][j].type == 'E' && board[i - 2][j].type == 'E' && !board[i][j].hasMoved)
-                        {
-                            board[i - 2][j].possible = true;
-                        }
-                        if (board[i - 1][j - 1].type != 'E' && !board[i - 1][j - 1].isWhite && onBoard(i - 1, j - 1))
-                        {
-                            board[i - 1][j - 1].possible = true;
-                        }
-                        if (board[i - 1][j + 1].type != 'E' && !board[i - 1][j + 1].isWhite && onBoard(i - 1, j + 1))
-                        {
-                            board[i - 1][j + 1].possible = true;
-                        }
-                    }
-                    else if (!board[i][j].isWhite)
-                    {
-                        if (board[i + 1][j].type == 'E')
-                        {
-                            board[i + 1][j].possible = true;
-                        }
-                        if (board[i + 1][j].type == 'E' && board[i + 2][j].type == 'E' && !board[i][j].hasMoved)
-                        {
-                            board[i + 2][j].possible = true;
-                        }
-                        if (board[i + 1][j - 1].type != 'E' && board[i + 1][j - 1].isWhite && onBoard(i + 1, j - 1))
-                        {
-                            board[i + 1][j - 1].possible = true;
-                        }
-                        if (board[i + 1][j + 1].type != 'E' && board[i + 1][j + 1].isWhite && onBoard(i + 1, j + 1))
-                        {
-                            board[i + 1][j + 1].possible = true;
-                        }
-                    }
-                    break;
-                case 'R':
-                    for (int index = i - 1; index >= 0; index--)
-                    {
-                        if (board[index][j].type != 'E')
-                        {
-                            if (board[index][j].isWhite != board[i][j].isWhite)
-                            {
-                                board[index][j].possible = true;
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            board[index][j].possible = true;
-                        }
-                    }
-                    for (int index = i + 1; index < 8; index++)
-                    {
-                        if (board[index][j].type != 'E')
-                        {
-                            if (board[index][j].isWhite != board[i][j].isWhite)
-                            {
-                                board[index][j].possible = true;
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            board[index][j].possible = true;
-                        }
-                    }
-                    for (int index = j - 1; index >= 0; index--)
-                    {
-                        if (board[i][index].type != 'E')
-                        {
-                            if (board[i][index].isWhite != board[i][j].isWhite)
-                            {
-                                board[i][index].possible = true;
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            board[i][index].possible = true;
-                        }
-                    }
-                    for (int index = j + 1; index < 8; index++)
-                    {
-                        if (board[i][index].type != 'E')
-                        {
-                            if (board[i][index].isWhite != board[i][j].isWhite)
-                            {
-                                board[i][index].possible = true;
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            board[i][index].possible = true;
-                        }
-                    }
-                    break;
-                case 'B':
-                    for (int indexI = i - 1, indexJ = j - 1; indexI >= 0 && indexI >= 0; indexI--, indexJ--)
-                    {
-                        if (!onBoard(indexI, indexJ))
-                        {
-                            break;
-                        }
-                        if (board[indexI][indexJ].type != 'E')
-                        {
-                            if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
-                            {
-                                board[indexI][indexJ].possible = true;
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            board[indexI][indexJ].possible = true;
-                        }
-                    }
-                    for (int indexI = i - 1, indexJ = j + 1; indexI >= 0 && indexI < 8; indexI--, indexJ++)
-                    {
-                        if (!onBoard(indexI, indexJ))
-                        {
-                            break;
-                        }
-                        if (board[indexI][indexJ].type != 'E')
-                        {
-                            if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
-                            {
-                                board[indexI][indexJ].possible = true;
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            board[indexI][indexJ].possible = true;
-                        }
-                    }
-                    for (int indexI = i + 1, indexJ = j + 1; indexI < 8 && indexI < 8; indexI++, indexJ++)
-                    {
-                        if (!onBoard(indexI, indexJ))
-                        {
-                            break;
-                        }
-                        if (board[indexI][indexJ].type != 'E')
-                        {
-                            if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
-                            {
-                                board[indexI][indexJ].possible = true;
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            board[indexI][indexJ].possible = true;
-                        }
-                    }
-                    for (int indexI = i + 1, indexJ = j - 1; indexI < 8 && indexI >= 0; indexI++, indexJ--)
-                    {
-                        if (!onBoard(indexI, indexJ))
-                        {
-                            break;
-                        }
-                        if (board[indexI][indexJ].type != 'E')
-                        {
-                            if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
-                            {
-                                board[indexI][indexJ].possible = true;
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            board[indexI][indexJ].possible = true;
-                        }
-                    }
-                    break;
-                case 'N':
-                    if (board[i - 2][j - 1].isWhite != board[i][j].isWhite && onBoard(i - 2, j - 1) || board[i - 2][j - 1].type == 'E' && onBoard(i - 2, j - 1))
-                    {
-                        board[i - 2][j - 1].possible = true;
-                    }
-                    if (board[i - 2][j + 1].isWhite != board[i][j].isWhite && onBoard(i - 2, j + 1) || board[i - 2][j + 1].type == 'E' && onBoard(i - 2, j + 1))
-                    {
-                        board[i - 2][j + 1].possible = true;
-                    }
-                    if (board[i + 2][j - 1].isWhite != board[i][j].isWhite && onBoard(i + 2, j - 1) || board[i + 2][j - 1].type == 'E' && onBoard(i + 2, j - 1))
-                    {
-                        board[i + 2][j - 1].possible = true;
-                    }
-                    if (board[i + 2][j + 1].isWhite != board[i][j].isWhite && onBoard(i + 2, j + 1) || board[i + 2][j + 1].type == 'E' && onBoard(i + 2, j + 1))
-                    {
-                        board[i + 2][j + 1].possible = true;
-                    }
-                    if (board[i - 1][j - 2].isWhite != board[i][j].isWhite && onBoard(i - 1, j - 2) || board[i - 1][j - 2].type == 'E' && onBoard(i - 1, j - 2))
-                    {
-                        board[i - 1][j - 2].possible = true;
-                    }
-                    if (board[i - 1][j + 2].isWhite != board[i][j].isWhite && onBoard(i - 1, j + 2) || board[i - 1][j + 2].type == 'E' && onBoard(i - 1, j + 2))
-                    {
-                        board[i - 1][j + 2].possible = true;
-                    }
-                    if (board[i + 1][j - 2].isWhite != board[i][j].isWhite && onBoard(i + 1, j - 2) || board[i + 1][j - 2].type == 'E' && onBoard(i + 1, j - 2))
-                    {
-                        board[i + 1][j - 2].possible = true;
-                    }
-                    if (board[i + 1][j + 2].isWhite != board[i][j].isWhite && onBoard(i + 1, j + 2) || board[i + 1][j + 2].type == 'E' && onBoard(i + 1, j + 2))
-                    {
-                        board[i + 1][j + 2].possible = true;
-                    }
-                    break;
-                case 'Q':
-                    for (int index = i - 1; index >= 0; index--)
-                    {
-                        if (board[index][j].type != 'E')
-                        {
-                            if (board[index][j].isWhite != board[i][j].isWhite)
-                            {
-                                board[index][j].possible = true;
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            board[index][j].possible = true;
-                        }
-                    }
-                    for (int index = i + 1; index < 8; index++)
-                    {
-                        if (board[index][j].type != 'E')
-                        {
-                            if (board[index][j].isWhite != board[i][j].isWhite)
-                            {
-                                board[index][j].possible = true;
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            board[index][j].possible = true;
-                        }
-                    }
-                    for (int index = j - 1; index >= 0; index--)
-                    {
-                        if (board[i][index].type != 'E')
-                        {
-                            if (board[i][index].isWhite != board[i][j].isWhite)
-                            {
-                                board[i][index].possible = true;
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            board[i][index].possible = true;
-                        }
-                    }
-                    for (int index = j + 1; index < 8; index++)
-                    {
-                        if (board[i][index].type != 'E')
-                        {
-                            if (board[i][index].isWhite != board[i][j].isWhite)
-                            {
-                                board[i][index].possible = true;
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            board[i][index].possible = true;
-                        }
-                    }
-                    for (int indexI = i - 1, indexJ = j - 1; indexI >= 0 && indexI >= 0; indexI--, indexJ--)
-                    {
-                        if (!onBoard(indexI, indexJ))
-                        {
-                            break;
-                        }
-                        if (board[indexI][indexJ].type != 'E')
-                        {
-                            if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
-                            {
-                                board[indexI][indexJ].possible = true;
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            board[indexI][indexJ].possible = true;
-                        }
-                    }
-                    for (int indexI = i - 1, indexJ = j + 1; indexI >= 0 && indexI < 8; indexI--, indexJ++)
-                    {
-                        if (!onBoard(indexI, indexJ))
-                        {
-                            break;
-                        }
-                        if (board[indexI][indexJ].type != 'E')
-                        {
-                            if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
-                            {
-                                board[indexI][indexJ].possible = true;
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            board[indexI][indexJ].possible = true;
-                        }
-                    }
-                    for (int indexI = i + 1, indexJ = j + 1; indexI < 8 && indexI < 8; indexI++, indexJ++)
-                    {
-                        if (!onBoard(indexI, indexJ))
-                        {
-                            break;
-                        }
-                        if (board[indexI][indexJ].type != 'E')
-                        {
-                            if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
-                            {
-                                board[indexI][indexJ].possible = true;
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            board[indexI][indexJ].possible = true;
-                        }
-                    }
-                    for (int indexI = i + 1, indexJ = j - 1; indexI < 8 && indexI >= 0; indexI++, indexJ--)
-                    {
-                        if (!onBoard(indexI, indexJ))
-                        {
-                            break;
-                        }
-                        if (board[indexI][indexJ].type != 'E')
-                        {
-                            if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
-                            {
-                                board[indexI][indexJ].possible = true;
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            board[indexI][indexJ].possible = true;
-                        }
-                    }
-                    break;
-                case 'K':
-                    for (int _i = i - 1; _i <= i + 1; _i++)
-                    {
-                        for (int _j = j - 1; _j <= j + 1; _j++)
-                        {
-                            if (board[_i][_j].isWhite != board[i][j].isWhite && onBoard(_i, _j) || board[_i][_j].type == 'E' && onBoard(_i, _j))
-                            {
-                                board[_i][_j].possible = true;
-                            }
-                        }
-                    }
-                    if (!board[i][j].hasMoved)
-                    {
-                        for (int index = j - 1; index >= 0; index--)
-                        {
-                            if (board[i][index].type == 'E')
-                            {
-                                board[i][index].castlePath = true;
-                            }
-                            else
-                            {
-                                if (board[i][index].type == 'R' && !board[i][index].hasMoved)
-                                {
-                                    board[i][index].castleSquare = true;
-                                }
-                                break;
-                            }
-                        }
-                        for (int index = j + 1; index < 8; index++)
-                        {
-                            if (board[i][index].type == 'E')
-                            {
-                                board[i][index].castlePath = true;
-                            }
-                            else
-                            {
-                                if (board[i][index].type == 'R' && !board[i][index].hasMoved)
-                                {
-                                    board[i][index].castleSquare = true;
-                                }
-                                break;
-                            }
-                        }
-                    }
 
-                    break;
-                case 'E':
-                    break;
-                default:
-                    cout << "Error" << endl;
-                    break;
+    if (board[i][j].isSelected && gameStatus == 1)
+    {
+        switch (board[i][j].type)
+        {
+        case 'P':
+            if (board[i][j].isWhite)
+            {
+                if (board[i - 1][j].type == 'E')
+                {
+                    board[i - 1][j].possible = true;
+                }
+                if (board[i - 1][j].type == 'E' && board[i - 2][j].type == 'E' && !board[i][j].hasMoved)
+                {
+                    board[i - 2][j].possible = true;
+                }
+                if (board[i - 1][j - 1].type != 'E' && !board[i - 1][j - 1].isWhite && onBoard(i - 1, j - 1))
+                {
+                    board[i - 1][j - 1].possible = true;
+                }
+                if (board[i - 1][j + 1].type != 'E' && !board[i - 1][j + 1].isWhite && onBoard(i - 1, j + 1))
+                {
+                    board[i - 1][j + 1].possible = true;
                 }
             }
+            else if (!board[i][j].isWhite)
+            {
+                if (board[i + 1][j].type == 'E')
+                {
+                    board[i + 1][j].possible = true;
+                }
+                if (board[i + 1][j].type == 'E' && board[i + 2][j].type == 'E' && !board[i][j].hasMoved)
+                {
+                    board[i + 2][j].possible = true;
+                }
+                if (board[i + 1][j - 1].type != 'E' && board[i + 1][j - 1].isWhite && onBoard(i + 1, j - 1))
+                {
+                    board[i + 1][j - 1].possible = true;
+                }
+                if (board[i + 1][j + 1].type != 'E' && board[i + 1][j + 1].isWhite && onBoard(i + 1, j + 1))
+                {
+                    board[i + 1][j + 1].possible = true;
+                }
+            }
+            break;
+        case 'R':
+            for (int index = i - 1; index >= 0; index--)
+            {
+                if (board[index][j].type != 'E')
+                {
+                    if (board[index][j].isWhite != board[i][j].isWhite)
+                    {
+                        board[index][j].possible = true;
+                    }
+                    break;
+                }
+                else
+                {
+                    board[index][j].possible = true;
+                }
+            }
+            for (int index = i + 1; index < 8; index++)
+            {
+                if (board[index][j].type != 'E')
+                {
+                    if (board[index][j].isWhite != board[i][j].isWhite)
+                    {
+                        board[index][j].possible = true;
+                    }
+                    break;
+                }
+                else
+                {
+                    board[index][j].possible = true;
+                }
+            }
+            for (int index = j - 1; index >= 0; index--)
+            {
+                if (board[i][index].type != 'E')
+                {
+                    if (board[i][index].isWhite != board[i][j].isWhite)
+                    {
+                        board[i][index].possible = true;
+                    }
+                    break;
+                }
+                else
+                {
+                    board[i][index].possible = true;
+                }
+            }
+            for (int index = j + 1; index < 8; index++)
+            {
+                if (board[i][index].type != 'E')
+                {
+                    if (board[i][index].isWhite != board[i][j].isWhite)
+                    {
+                        board[i][index].possible = true;
+                    }
+                    break;
+                }
+                else
+                {
+                    board[i][index].possible = true;
+                }
+            }
+            break;
+        case 'B':
+            for (int indexI = i - 1, indexJ = j - 1; indexI >= 0 && indexI >= 0; indexI--, indexJ--)
+            {
+                if (!onBoard(indexI, indexJ))
+                {
+                    break;
+                }
+                if (board[indexI][indexJ].type != 'E')
+                {
+                    if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
+                    {
+                        board[indexI][indexJ].possible = true;
+                    }
+                    break;
+                }
+                else
+                {
+                    board[indexI][indexJ].possible = true;
+                }
+            }
+            for (int indexI = i - 1, indexJ = j + 1; indexI >= 0 && indexI < 8; indexI--, indexJ++)
+            {
+                if (!onBoard(indexI, indexJ))
+                {
+                    break;
+                }
+                if (board[indexI][indexJ].type != 'E')
+                {
+                    if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
+                    {
+                        board[indexI][indexJ].possible = true;
+                    }
+                    break;
+                }
+                else
+                {
+                    board[indexI][indexJ].possible = true;
+                }
+            }
+            for (int indexI = i + 1, indexJ = j + 1; indexI < 8 && indexI < 8; indexI++, indexJ++)
+            {
+                if (!onBoard(indexI, indexJ))
+                {
+                    break;
+                }
+                if (board[indexI][indexJ].type != 'E')
+                {
+                    if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
+                    {
+                        board[indexI][indexJ].possible = true;
+                    }
+                    break;
+                }
+                else
+                {
+                    board[indexI][indexJ].possible = true;
+                }
+            }
+            for (int indexI = i + 1, indexJ = j - 1; indexI < 8 && indexI >= 0; indexI++, indexJ--)
+            {
+                if (!onBoard(indexI, indexJ))
+                {
+                    break;
+                }
+                if (board[indexI][indexJ].type != 'E')
+                {
+                    if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
+                    {
+                        board[indexI][indexJ].possible = true;
+                    }
+                    break;
+                }
+                else
+                {
+                    board[indexI][indexJ].possible = true;
+                }
+            }
+            break;
+        case 'N':
+            if (board[i - 2][j - 1].isWhite != board[i][j].isWhite && onBoard(i - 2, j - 1) || board[i - 2][j - 1].type == 'E' && onBoard(i - 2, j - 1))
+            {
+                board[i - 2][j - 1].possible = true;
+            }
+            if (board[i - 2][j + 1].isWhite != board[i][j].isWhite && onBoard(i - 2, j + 1) || board[i - 2][j + 1].type == 'E' && onBoard(i - 2, j + 1))
+            {
+                board[i - 2][j + 1].possible = true;
+            }
+            if (board[i + 2][j - 1].isWhite != board[i][j].isWhite && onBoard(i + 2, j - 1) || board[i + 2][j - 1].type == 'E' && onBoard(i + 2, j - 1))
+            {
+                board[i + 2][j - 1].possible = true;
+            }
+            if (board[i + 2][j + 1].isWhite != board[i][j].isWhite && onBoard(i + 2, j + 1) || board[i + 2][j + 1].type == 'E' && onBoard(i + 2, j + 1))
+            {
+                board[i + 2][j + 1].possible = true;
+            }
+            if (board[i - 1][j - 2].isWhite != board[i][j].isWhite && onBoard(i - 1, j - 2) || board[i - 1][j - 2].type == 'E' && onBoard(i - 1, j - 2))
+            {
+                board[i - 1][j - 2].possible = true;
+            }
+            if (board[i - 1][j + 2].isWhite != board[i][j].isWhite && onBoard(i - 1, j + 2) || board[i - 1][j + 2].type == 'E' && onBoard(i - 1, j + 2))
+            {
+                board[i - 1][j + 2].possible = true;
+            }
+            if (board[i + 1][j - 2].isWhite != board[i][j].isWhite && onBoard(i + 1, j - 2) || board[i + 1][j - 2].type == 'E' && onBoard(i + 1, j - 2))
+            {
+                board[i + 1][j - 2].possible = true;
+            }
+            if (board[i + 1][j + 2].isWhite != board[i][j].isWhite && onBoard(i + 1, j + 2) || board[i + 1][j + 2].type == 'E' && onBoard(i + 1, j + 2))
+            {
+                board[i + 1][j + 2].possible = true;
+            }
+            break;
+        case 'Q':
+            for (int index = i - 1; index >= 0; index--)
+            {
+                if (board[index][j].type != 'E')
+                {
+                    if (board[index][j].isWhite != board[i][j].isWhite)
+                    {
+                        board[index][j].possible = true;
+                    }
+                    break;
+                }
+                else
+                {
+                    board[index][j].possible = true;
+                }
+            }
+            for (int index = i + 1; index < 8; index++)
+            {
+                if (board[index][j].type != 'E')
+                {
+                    if (board[index][j].isWhite != board[i][j].isWhite)
+                    {
+                        board[index][j].possible = true;
+                    }
+                    break;
+                }
+                else
+                {
+                    board[index][j].possible = true;
+                }
+            }
+            for (int index = j - 1; index >= 0; index--)
+            {
+                if (board[i][index].type != 'E')
+                {
+                    if (board[i][index].isWhite != board[i][j].isWhite)
+                    {
+                        board[i][index].possible = true;
+                    }
+                    break;
+                }
+                else
+                {
+                    board[i][index].possible = true;
+                }
+            }
+            for (int index = j + 1; index < 8; index++)
+            {
+                if (board[i][index].type != 'E')
+                {
+                    if (board[i][index].isWhite != board[i][j].isWhite)
+                    {
+                        board[i][index].possible = true;
+                    }
+                    break;
+                }
+                else
+                {
+                    board[i][index].possible = true;
+                }
+            }
+            for (int indexI = i - 1, indexJ = j - 1; indexI >= 0 && indexI >= 0; indexI--, indexJ--)
+            {
+                if (!onBoard(indexI, indexJ))
+                {
+                    break;
+                }
+                if (board[indexI][indexJ].type != 'E')
+                {
+                    if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
+                    {
+                        board[indexI][indexJ].possible = true;
+                    }
+                    break;
+                }
+                else
+                {
+                    board[indexI][indexJ].possible = true;
+                }
+            }
+            for (int indexI = i - 1, indexJ = j + 1; indexI >= 0 && indexI < 8; indexI--, indexJ++)
+            {
+                if (!onBoard(indexI, indexJ))
+                {
+                    break;
+                }
+                if (board[indexI][indexJ].type != 'E')
+                {
+                    if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
+                    {
+                        board[indexI][indexJ].possible = true;
+                    }
+                    break;
+                }
+                else
+                {
+                    board[indexI][indexJ].possible = true;
+                }
+            }
+            for (int indexI = i + 1, indexJ = j + 1; indexI < 8 && indexI < 8; indexI++, indexJ++)
+            {
+                if (!onBoard(indexI, indexJ))
+                {
+                    break;
+                }
+                if (board[indexI][indexJ].type != 'E')
+                {
+                    if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
+                    {
+                        board[indexI][indexJ].possible = true;
+                    }
+                    break;
+                }
+                else
+                {
+                    board[indexI][indexJ].possible = true;
+                }
+            }
+            for (int indexI = i + 1, indexJ = j - 1; indexI < 8 && indexI >= 0; indexI++, indexJ--)
+            {
+                if (!onBoard(indexI, indexJ))
+                {
+                    break;
+                }
+                if (board[indexI][indexJ].type != 'E')
+                {
+                    if (board[indexI][indexJ].isWhite != board[i][j].isWhite)
+                    {
+                        board[indexI][indexJ].possible = true;
+                    }
+                    break;
+                }
+                else
+                {
+                    board[indexI][indexJ].possible = true;
+                }
+            }
+            break;
+        case 'K':
+            for (int _i = i - 1; _i <= i + 1; _i++)
+            {
+                for (int _j = j - 1; _j <= j + 1; _j++)
+                {
+                    if (board[_i][_j].isWhite != board[i][j].isWhite && onBoard(_i, _j) || board[_i][_j].type == 'E' && onBoard(_i, _j))
+                    {
+                        board[_i][_j].possible = true;
+                    }
+                }
+            }
+            if (!board[i][j].hasMoved)
+            {
+                for (int index = j - 1; index >= 0; index--)
+                {
+                    if (board[i][index].type == 'E')
+                    {
+                        board[i][index].castlePath = true;
+                    }
+                    else
+                    {
+                        if (board[i][index].type == 'R' && !board[i][index].hasMoved && whiteTurn == board[i][index].isWhite)
+                        {
+                            board[i][index].castleSquare = true;
+                        }
+                        break;
+                    }
+                }
+                for (int index = j + 1; index < 8; index++)
+                {
+                    if (board[i][index].type == 'E')
+                    {
+                        board[i][index].castlePath = true;
+                    }
+                    else
+                    {
+                        if (board[i][index].type == 'R' && !board[i][index].hasMoved && whiteTurn == board[i][index].isWhite)
+                        {
+                            board[i][index].castleSquare = true;
+                        }
+                        break;
+                    }
+                }
+            }
+            break;
+        case 'E':
+            break;
+        default:
+            cout << "Error" << endl;
+            break;
         }
     }
+    
 }
 
 void Board::setSelected(int X, int Y)
@@ -837,14 +830,16 @@ void Board::setSelected(int X, int Y)
 
 bool Board::onBoard(int x, int y)
 {
+    bool onBoard = false;
     if (x >= 0 && x <= 7 && y >= 0 && y <= 7)
     {
-        return true;
+        onBoard  = true;
     }
     else
     {
-        return false;
+        onBoard = false;
     }
+    return onBoard;
 }
 
 int Board::gameState()
@@ -860,7 +855,8 @@ int Board::gameState()
                 if (board[i][j].isWhite)
                 {
                     board[i][j].isSelected = true;
-                    calcMoves();
+                    board[i][j].checksKing = false;
+                    calcMoves(i, j);
                 }
                 for (int a = 0; a < 8; a++)
                 {
@@ -870,6 +866,7 @@ int Board::gameState()
                         {
                             sprintf(gameCheck, "White checks Black!");
                             status = 2;
+                            board[i][j].checksKing = true;
                         }
                         board[a][b].isSelected = false;
                         board[a][b].possible = false;
@@ -885,7 +882,8 @@ int Board::gameState()
                 if (!board[i][j].isWhite)
                 {
                     board[i][j].isSelected = true;
-                    calcMoves();
+                    board[i][j].checksKing = false;
+                    calcMoves(i, j);
                 }
                 for (int a = 0; a < 8; a++)
                 {
@@ -895,6 +893,7 @@ int Board::gameState()
                         {
                             sprintf(gameCheck, "Black checks White!");
                             status = 3;
+                            board[i][j].checksKing = true;
                         }
                         board[a][b].isSelected = false;
                         board[a][b].possible = false;
@@ -920,6 +919,7 @@ int Board::gameState()
         if (wKingAlive && bKingAlive)
         {
             status = 1;
+            
         }
         else if (wKingAlive && !bKingAlive)
         {

@@ -3,7 +3,6 @@
 /*
     TODO
     En passent
-    Castling
     Restrict move if mate
     Visualize captured pieces
     SVG files for pieces
@@ -46,7 +45,7 @@ int main(int argc, char *args[])
                 {
                     chessBoard.setupBoard();
                 }
-                chessBoard.calcMoves();
+                chessBoard.calcMoves(y / 92, x / 92);
             }
             if (event.type == SDL_KEYDOWN)
             {
